@@ -1,0 +1,7 @@
+{
+  "server": {
+    "address": ":8080",
+    "read_header_timeout_seconds": 5,
+    "shutdown_timeout_seconds": 10
+  }
+}
