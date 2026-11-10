@@ -2,6 +2,7 @@ package router
 
 import (
 	"go-backend-template/internal/platform/apperror"
+	"go-backend-template/internal/platform/middleware"
 	"go-backend-template/internal/platform/response"
 	"log/slog"
 	"net/http"
@@ -10,8 +11,9 @@ import (
 type HandlerFunc func(http.ResponseWriter, *http.Request) error
 
 type Router struct {
-	mux    *http.ServeMux
-	logger *slog.Logger
+	mux         *http.ServeMux
+	logger      *slog.Logger
+	middlewares []middleware.Middleware
 }
 
 func New(logger *slog.Logger) *Router {
@@ -19,6 +21,10 @@ func New(logger *slog.Logger) *Router {
 		mux:    http.NewServeMux(),
 		logger: logger,
 	}
+}
+
+func (r *Router) Use(middlewares ...middleware.Middleware) {
+	r.middlewares = append(r.middlewares, middlewares...)
 }
 
 func (r *Router) Handle(method string, path string, handler HandlerFunc) {
@@ -31,7 +37,15 @@ func (r *Router) Handle(method string, path string, handler HandlerFunc) {
 }
 
 func (r *Router) Handler() http.Handler {
-	return r.mux
+
+	return middleware.Chain(r.mux, r.middlewares...)
+}
+
+func (r *Router) Group(prefix string) *Group {
+	return &Group{
+		router: r,
+		prefix: normalizePrefix(prefix),
+	}
 }
 
 func (r *Router) handleError(w http.ResponseWriter, req *http.Request, err error) {
@@ -51,6 +65,18 @@ func (r *Router) handleError(w http.ResponseWriter, req *http.Request, err error
 	if writeErr := response.Failure(w, appError); writeErr != nil {
 		r.logger.Error("failed to write error response", "error", writeErr)
 	}
+}
+
+func (r *Router) register(method string, path string, handler HandlerFunc, middlewares []middleware.Middleware) {
+	adaptedHandler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if err := handler(w, req); err != nil {
+			r.handleError(w, req, err)
+		}
+	})
+	finalHandler := middleware.Chain(adaptedHandler, middlewares...)
+
+	pattern := method + " " + path
+	r.mux.Handle(pattern, finalHandler)
 }
 
 func (r *Router) GET(path string, handler HandlerFunc) {
