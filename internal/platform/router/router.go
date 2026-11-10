@@ -37,8 +37,41 @@ func (r *Router) Handle(method string, path string, handler HandlerFunc) {
 }
 
 func (r *Router) Handler() http.Handler {
+	routingHandler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		matchedHandler, pattern := r.mux.Handler(req)
+		if pattern != "" {
+			matchedHandler.ServeHTTP(w, req)
+			return
+		}
+		r.handleUnmatchedRoute(w, req, matchedHandler)
 
-	return middleware.Chain(r.mux, r.middlewares...)
+	})
+	return middleware.Chain(routingHandler, r.middlewares...)
+}
+
+func (r *Router) handleUnmatchedRoute(w http.ResponseWriter, req *http.Request, handler http.Handler) {
+	probe := newStatusProbe()
+	handler.ServeHTTP(probe, req)
+	var code apperror.Code
+
+	switch probe.statusCode {
+	case http.StatusMethodNotAllowed:
+		code = apperror.CodeMethodNotAllowed
+		if allow := probe.Header().Get("Allow"); allow != "" {
+			w.Header().Set("Allow", allow)
+		}
+	default:
+		code = apperror.CodeNotFound
+	}
+	appError := apperror.New(code, "")
+	if err := response.Failure(w, appError); err != nil {
+		r.logger.Error(
+			"failed to write unmatched route response",
+			"method", req.Method,
+			"path", req.URL.Path,
+			"error", err,
+		)
+	}
 }
 
 func (r *Router) Group(prefix string) *Group {

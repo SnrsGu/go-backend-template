@@ -5,10 +5,12 @@ import "net/http"
 type Code int
 
 const (
-	CodeSuccess         Code = 0
-	CodeInternal        Code = 10000
-	CodeInvalidArgument Code = 10001
-	CodeNotFound        Code = 10002
+	CodeSuccess          Code = 0
+	CodeInternal         Code = 10000
+	CodeInvalidArgument  Code = 10001
+	CodeNotFound         Code = 10002
+	CodeForbidden        Code = 10003
+	CodeMethodNotAllowed Code = 10004
 
 	//CodeUserNotFound Code = 20001
 )
@@ -19,10 +21,12 @@ type CodeDefinition struct {
 }
 
 var codeDefinitions = map[Code]CodeDefinition{
-	CodeSuccess:         {HTTPStatus: http.StatusOK, Message: "success"},
-	CodeInternal:        {HTTPStatus: http.StatusInternalServerError, Message: "未知错误"},
-	CodeInvalidArgument: {HTTPStatus: http.StatusBadRequest, Message: "参数错误"},
-	CodeNotFound:        {HTTPStatus: http.StatusNotFound, Message: "数据不存在"},
+	CodeSuccess:          {HTTPStatus: http.StatusOK, Message: "success"},
+	CodeInternal:         {HTTPStatus: http.StatusInternalServerError, Message: "未知错误"},
+	CodeInvalidArgument:  {HTTPStatus: http.StatusBadRequest, Message: "参数错误"},
+	CodeNotFound:         {HTTPStatus: http.StatusNotFound, Message: "数据不存在"},
+	CodeForbidden:        {HTTPStatus: http.StatusForbidden, Message: "禁止访问"},
+	CodeMethodNotAllowed: {HTTPStatus: http.StatusMethodNotAllowed, Message: "不支持的请求方式"},
 }
 
 func (c Code) Definition() CodeDefinition {

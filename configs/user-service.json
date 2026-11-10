@@ -1,0 +1,15 @@
+{
+  "server": {
+    "address": ":8081",
+    "read_header_timeout_seconds": 5,
+    "shutdown_timeout_seconds": 10
+  },
+  "database": {
+    "driver": "mysql",
+    "max_open_connections": 20,
+    "max_idle_connections": 5,
+    "connection_max_lifetime_seconds": 180,
+    "connection_max_idle_time_seconds": 120,
+    "connect_timeout_seconds": 5
+  }
+}
