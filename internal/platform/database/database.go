@@ -2,53 +2,47 @@ package database
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"fmt"
-
 	"go-backend-template/internal/platform/config"
 
-	_ "github.com/go-sql-driver/mysql"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
-// Open 根据配置创建并验证数据库连接池。
-func Open(ctx context.Context, databaseDSN string, cfg config.DatabaseConfig) (*sql.DB, error) {
+func Open(ctx context.Context, databaseDSN string, cfg config.DatabaseConfig) (*gorm.DB, error) {
 	if err := cfg.Validate(); err != nil {
-		return nil, fmt.Errorf("invalid database configuration: %w", err)
+		return nil, fmt.Errorf("validate database config: %w", err)
 	}
 
 	if databaseDSN == "" {
-		return nil, errors.New("database DSN is empty")
+		return nil, fmt.Errorf("database DSN is empty")
 	}
-
-	var driverName string
-
+	var dialector gorm.Dialector
 	switch cfg.Driver {
 	case "mysql":
-		driverName = "mysql"
+		dialector = mysql.Open(databaseDSN)
 	default:
-		return nil, fmt.Errorf("unsupported database driver: %s", cfg.Driver)
+		return nil, fmt.Errorf("unknown driver: %s", cfg.Driver)
 	}
-
-	databaseConnection, err := sql.Open(driverName, databaseDSN)
+	connectContext, cancel := context.WithTimeout(ctx, cfg.ConnectTimeout())
+	defer cancel()
+	dbConnection, err := gorm.Open(dialector, &gorm.Config{TranslateError: true})
 	if err != nil {
 		return nil, fmt.Errorf("open %s database: %w", cfg.Driver, err)
 	}
 
-	databaseConnection.SetMaxOpenConns(cfg.MaxOpenConnections)
-
-	databaseConnection.SetMaxIdleConns(cfg.MaxIdleConnections)
-
-	databaseConnection.SetConnMaxLifetime(cfg.ConnectionMaxLifetimeDuration())
-
-	databaseConnection.SetConnMaxIdleTime(cfg.ConnectionMaxIdleTimeDuration())
-
-	connectContext, cancel := context.WithTimeout(ctx, cfg.ConnectTimeout())
-	defer cancel()
-
-	if err := databaseConnection.PingContext(connectContext); err != nil {
-		_ = databaseConnection.Close()
-		return nil, fmt.Errorf("ping %s database: %w", cfg.Driver, err)
+	sqlDatabase, err := dbConnection.DB()
+	if err != nil {
+		return nil, fmt.Errorf("open %s database: %w", cfg.Driver, err)
 	}
-	return databaseConnection, nil
+	sqlDatabase.SetMaxOpenConns(cfg.MaxOpenConnections)
+	sqlDatabase.SetMaxIdleConns(cfg.MaxIdleConnections)
+	sqlDatabase.SetConnMaxLifetime(cfg.ConnectionMaxLifetimeDuration())
+	sqlDatabase.SetConnMaxIdleTime(cfg.ConnectionMaxIdleTimeDuration())
+
+	if err := sqlDatabase.PingContext(connectContext); err != nil {
+		_ = sqlDatabase.Close()
+		return nil, fmt.Errorf("open %s database: %w", cfg.Driver, err)
+	}
+	return dbConnection, nil
 }

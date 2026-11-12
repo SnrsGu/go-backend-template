@@ -46,12 +46,13 @@ func run(appLogger *slog.Logger, configPath string) error {
 	startupContext, cancelStartup := context.WithTimeout(context.Background(), configuration.Database.ConnectTimeout())
 	defer cancelStartup()
 
-	databaseConnection, err := database.Open(startupContext, databaseURL, configuration.Database)
+	dbConn, err := database.Open(startupContext, databaseURL, configuration.Database)
 	if err != nil {
 		return fmt.Errorf("initialize database: %w", err)
 	}
+	sqlDB, err := dbConn.DB()
 	defer func() {
-		if err := databaseConnection.Close(); err != nil {
+		if err := sqlDB.Close(); err != nil {
 			appLogger.Error("failed to close database", "error", err)
 		}
 	}()
@@ -67,7 +68,7 @@ func run(appLogger *slog.Logger, configPath string) error {
 	})
 
 	appRouter.GET("/ready", func(w http.ResponseWriter, req *http.Request) error {
-		return checkDatabaseReady(w, req, databaseConnection)
+		return checkDatabaseReady(w, req, sqlDB)
 	})
 
 	httpServer := &http.Server{
@@ -129,11 +130,11 @@ func run(appLogger *slog.Logger, configPath string) error {
 	return nil
 }
 
-func checkDatabaseReady(w http.ResponseWriter, req *http.Request, databaseConnection *sql.DB) error {
+func checkDatabaseReady(w http.ResponseWriter, req *http.Request, sqlDB *sql.DB) error {
 	checkContext, cancel := context.WithTimeout(req.Context(), 2*time.Second)
 	defer cancel()
 
-	if err := databaseConnection.PingContext(checkContext); err != nil {
+	if err := sqlDB.PingContext(checkContext); err != nil {
 		return apperror.Wrap(
 			apperror.CodeInternal,
 			"",
