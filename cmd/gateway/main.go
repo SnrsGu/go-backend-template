@@ -1,16 +1,27 @@
 package main
 
 import (
-	"errors"
+	"context"
 	"flag"
+	"fmt"
 	"go-backend-template/internal/platform/config"
 	"go-backend-template/internal/platform/logger"
+	"go-backend-template/internal/platform/server"
 	"log"
 	"net/http"
-	"time"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
+	if err := run(); err != nil {
+		log.Printf("Gateway服务黜退失败: %v", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
 	configPath := flag.String("config", "configs/config.yaml", "path to config file")
 	flag.Parse()
 
@@ -24,24 +35,19 @@ func main() {
 		log.Fatalf("初始化日志失败: %v", err)
 	}
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Content-Type", "text/plain")
 		writer.WriteHeader(http.StatusOK)
 		_, _ = writer.Write([]byte("OK"))
 	})
-
-	server := &http.Server{
-		Addr:              cfg.Server.Address,
-		Handler:           mux,
-		ReadHeaderTimeout: 5 * time.Second,
+	appLogger.Info("Gateway服务初始化完成")
+	if err = server.Run(ctx, cfg.Server, mux, appLogger); err != nil {
+		return fmt.Errorf("gateway HTTP 服务运行失败: %w", err)
 	}
-	appLogger.Info(
-		"Gateway服务开始启动",
-		"addr", server.Addr,
-	)
-
-	if err = server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		appLogger.Error("Gateway服务运行失败", "error", err)
-	}
+	appLogger.Info("Gateway 服务已退出")
+	return nil
 }

@@ -1,5 +1,8 @@
 server:
   address: ":8080"
+  read_header_timeout: 5 # 读取请求头超时时长
+  idle_timeout: 60 # 空闲连接超时时长
+  shutdown_timeout: 10 # 退出最长等待时间
 
 log:
   level: "info"

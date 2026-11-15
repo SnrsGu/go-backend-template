@@ -16,7 +16,10 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Address string `yaml:"address"`
+	Address           string `yaml:"address"`
+	ReadHeaderTimeout int    `yaml:"read_header_timeout"`
+	IdleTimeout       int    `yaml:"idle_timeout"`
+	ShutdownTimeout   int    `yaml:"shutdown_timeout"`
 }
 
 type LogConfig struct {
@@ -27,7 +30,10 @@ type LogConfig struct {
 func defaultConfig() Config {
 	return Config{
 		Server: ServerConfig{
-			Address: ":8080",
+			Address:           ":8080",
+			ReadHeaderTimeout: 5,
+			IdleTimeout:       60,
+			ShutdownTimeout:   10,
 		},
 		Log: LogConfig{
 			Level:  "info",
@@ -86,6 +92,17 @@ func (c *Config) Validate() error {
 	port, err := strconv.Atoi(portString)
 	if err != nil || port < 1 || port > 65535 {
 		return fmt.Errorf("无效的server.address: port %q", portString)
+	}
+	if c.Server.ReadHeaderTimeout <= 0 {
+		return fmt.Errorf("server.read_header_timeout必须大于 0")
+	}
+
+	if c.Server.IdleTimeout <= 0 {
+		return fmt.Errorf("server.idle_timeout必须大于 0")
+	}
+
+	if c.Server.ShutdownTimeout <= 0 {
+		return fmt.Errorf("server.shutdown_timeout必须大于 0")
 	}
 	return nil
 }
