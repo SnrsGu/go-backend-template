@@ -41,7 +41,12 @@ func run() error {
 	defer stop()
 
 	appRouter := router.New(appLogger)
-	httpHandler := middleware.Recovery(appLogger)(appRouter)
+	httpHandler := middleware.Chain(
+		appRouter,
+		middleware.RequestID(),
+		middleware.AccessLog(appLogger),
+		middleware.Recovery(appLogger),
+	)
 	gateway.RegisterRouters(appRouter)
 
 	appLogger.Info("Gateway服务初始化完成")

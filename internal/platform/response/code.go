@@ -66,9 +66,11 @@ func ResolveCode(err error) Code {
 }
 
 var (
-	CodeSuccess         = NewCode(0, "success")
-	CodeInternal        = NewCode(10000, "未知错误", http.StatusInternalServerError)
-	CodeInvalidArgument = NewCode(10001, "请求参数错误", http.StatusBadRequest)
-	CodeUnauthorized    = NewCode(10002, "未登录或登录已失效", http.StatusUnauthorized)
-	CodeForbidden       = NewCode(10003, "无权限访问", http.StatusForbidden)
+	CodeSuccess          = NewCode(0, "success")
+	CodeInternal         = NewCode(10000, "未知错误", http.StatusInternalServerError)
+	CodeInvalidArgument  = NewCode(10001, "请求参数错误", http.StatusBadRequest)
+	CodeUnauthorized     = NewCode(10002, "未登录或登录已失效", http.StatusUnauthorized)
+	CodeForbidden        = NewCode(10003, "无权限访问", http.StatusForbidden)
+	CodeNotFound         = NewCode(10004, "请求资源不存在", http.StatusNotFound)
+	CodeMethodNotAllowed = NewCode(10005, "不支持的请求方式", http.StatusMethodNotAllowed)
 )

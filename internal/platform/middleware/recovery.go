@@ -10,6 +10,7 @@ import (
 func Recovery(logger *slog.Logger) func(handler http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			writer := getResponseWriter(w)
 			defer func() {
 				if err := recover(); err != nil {
 					logger.Error(
@@ -19,7 +20,10 @@ func Recovery(logger *slog.Logger) func(handler http.Handler) http.Handler {
 						"panic", err,
 						"stack", string(debug.Stack()),
 					)
-					if err := response.Fail(w, response.CodeInternal); err != nil {
+					if writer.committed {
+						return
+					}
+					if err = response.Fail(w, response.CodeInternal); err != nil {
 						logger.Error("错误响应失败", "error", err)
 					}
 				}
