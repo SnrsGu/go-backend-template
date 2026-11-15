@@ -4,11 +4,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"go-backend-template/internal/gateway"
 	"go-backend-template/internal/platform/config"
 	"go-backend-template/internal/platform/logger"
+	"go-backend-template/internal/platform/router"
 	"go-backend-template/internal/platform/server"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -38,14 +39,11 @@ func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /health", func(writer http.ResponseWriter, request *http.Request) {
-		writer.Header().Set("Content-Type", "text/plain")
-		writer.WriteHeader(http.StatusOK)
-		_, _ = writer.Write([]byte("OK"))
-	})
+	appRouter := router.New()
+	gateway.RegisterRouters(appRouter)
+
 	appLogger.Info("Gateway服务初始化完成")
-	if err = server.Run(ctx, cfg.Server, mux, appLogger); err != nil {
+	if err = server.Run(ctx, cfg.Server, appRouter, appLogger); err != nil {
 		return fmt.Errorf("gateway HTTP 服务运行失败: %w", err)
 	}
 	appLogger.Info("Gateway 服务已退出")
