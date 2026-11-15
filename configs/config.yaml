@@ -1,2 +1,6 @@
 server:
   address: ":8080"
+
+log:
+  level: "info"
+  format: "text"

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"go-backend-template/internal/platform/config"
+	"go-backend-template/internal/platform/logger"
 	"log"
 	"net/http"
 	"time"
@@ -18,6 +19,11 @@ func main() {
 		log.Fatalf("加载配置失败: %v", err)
 	}
 
+	appLogger, err := logger.New(cfg.Log.Level, cfg.Log.Format)
+	if err != nil {
+		log.Fatalf("初始化日志失败: %v", err)
+	}
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Content-Type", "text/plain")
@@ -30,9 +36,12 @@ func main() {
 		Handler:           mux,
 		ReadHeaderTimeout: 5 * time.Second,
 	}
+	appLogger.Info(
+		"Gateway服务开始启动",
+		"addr", server.Addr,
+	)
 
-	log.Printf("Gateway server listening on %s", cfg.Server.Address)
-	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		log.Fatal(err)
+	if err = server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		appLogger.Error("Gateway服务运行失败", "error", err)
 	}
 }

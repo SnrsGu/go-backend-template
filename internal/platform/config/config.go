@@ -12,16 +12,26 @@ import (
 
 type Config struct {
 	Server ServerConfig `yaml:"server"`
+	Log    LogConfig    `yaml:"log"`
 }
 
 type ServerConfig struct {
 	Address string `yaml:"address"`
 }
 
+type LogConfig struct {
+	Level  string `yaml:"level"`
+	Format string `yaml:"format"`
+}
+
 func defaultConfig() Config {
 	return Config{
 		Server: ServerConfig{
 			Address: ":8080",
+		},
+		Log: LogConfig{
+			Level:  "info",
+			Format: "text",
 		},
 	}
 }
@@ -53,6 +63,12 @@ func Load(path string) (*Config, error) {
 func applyEnv(cfg *Config) {
 	if value, exists := os.LookupEnv("GBT_SERVER_ADDRESS"); exists {
 		cfg.Server.Address = value
+	}
+	if value, exists := os.LookupEnv("GBT_SERVER_LOG_LEVEL"); exists {
+		cfg.Log.Level = value
+	}
+	if value, exists := os.LookupEnv("GBT_SERVER_LOG_FORMAT"); exists {
+		cfg.Log.Format = value
 	}
 }
 
