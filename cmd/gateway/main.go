@@ -7,6 +7,7 @@ import (
 	"go-backend-template/internal/gateway"
 	"go-backend-template/internal/platform/config"
 	"go-backend-template/internal/platform/logger"
+	"go-backend-template/internal/platform/middleware"
 	"go-backend-template/internal/platform/router"
 	"go-backend-template/internal/platform/server"
 	"log"
@@ -39,11 +40,12 @@ func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	appRouter := router.New()
+	appRouter := router.New(appLogger)
+	httpHandler := middleware.Recovery(appLogger)(appRouter)
 	gateway.RegisterRouters(appRouter)
 
 	appLogger.Info("Gateway服务初始化完成")
-	if err = server.Run(ctx, cfg.Server, appRouter, appLogger); err != nil {
+	if err = server.Run(ctx, cfg.Server, httpHandler, appLogger); err != nil {
 		return fmt.Errorf("gateway HTTP 服务运行失败: %w", err)
 	}
 	appLogger.Info("Gateway 服务已退出")

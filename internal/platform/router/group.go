@@ -35,7 +35,15 @@ func (g *Group) Use(middlewares ...Middleware) {
 	}
 }
 
-func (g *Group) Handle(method, path string, handler http.Handler) {
+func (g *Group) Handle(method, path string, handler HandlerFunc) {
+	if handler == nil {
+		panic("路由Handler为空")
+	}
+	httpHandler := wrapHandler(g.router.logger, handler)
+	g.HandleRaw(method, path, httpHandler)
+}
+
+func (g *Group) HandleRaw(method, path string, handler http.Handler) {
 	if handler == nil {
 		panic("路由Handler为空")
 	}
@@ -50,51 +58,43 @@ func (g *Group) Handle(method, path string, handler http.Handler) {
 	}
 
 	wrappedHandler := chain(handler, g.middlewares)
-
 	g.router.mux.Handle(method+" "+fullPath, wrappedHandler)
 }
 
-func (g *Group) HandleFunc(method, path string, handler http.HandlerFunc) {
-	if handler == nil {
-		panic("路由HandlerFunc为空")
-	}
-	g.Handle(method, path, handler)
+func (g *Group) GET(path string, handler HandlerFunc) {
+	g.Handle(http.MethodGet, path, handler)
 }
 
-func (g *Group) GET(path string, handler http.HandlerFunc) {
-	g.HandleFunc(http.MethodGet, path, handler)
+func (g *Group) HEAD(path string, handler HandlerFunc) {
+	g.Handle(http.MethodHead, path, handler)
 }
 
-func (g *Group) HEAD(path string, handler http.HandlerFunc) {
-	g.HandleFunc(http.MethodHead, path, handler)
+func (g *Group) POST(path string, handler HandlerFunc) {
+	g.Handle(http.MethodPost, path, handler)
 }
 
-func (g *Group) POST(path string, handler http.HandlerFunc) {
-	g.HandleFunc(http.MethodPost, path, handler)
+func (g *Group) PUT(path string, handler HandlerFunc) {
+	g.Handle(http.MethodPut, path, handler)
 }
 
-func (g *Group) PUT(path string, handler http.HandlerFunc) {
-	g.HandleFunc(http.MethodPut, path, handler)
+func (g *Group) PATCH(path string, handler HandlerFunc) {
+	g.Handle(http.MethodPatch, path, handler)
 }
 
-func (g *Group) PATCH(path string, handler http.HandlerFunc) {
-	g.HandleFunc(http.MethodPatch, path, handler)
+func (g *Group) DELETE(path string, handler HandlerFunc) {
+	g.Handle(http.MethodDelete, path, handler)
 }
 
-func (g *Group) DELETE(path string, handler http.HandlerFunc) {
-	g.HandleFunc(http.MethodDelete, path, handler)
+func (g *Group) CONNECT(path string, handler HandlerFunc) {
+	g.Handle(http.MethodConnect, path, handler)
 }
 
-func (g *Group) CONNECT(path string, handler http.HandlerFunc) {
-	g.HandleFunc(http.MethodConnect, path, handler)
+func (g *Group) OPTIONS(path string, handler HandlerFunc) {
+	g.Handle(http.MethodOptions, path, handler)
 }
 
-func (g *Group) OPTIONS(path string, handler http.HandlerFunc) {
-	g.HandleFunc(http.MethodOptions, path, handler)
-}
-
-func (g *Group) TRACE(path string, handler http.HandlerFunc) {
-	g.HandleFunc(http.MethodTrace, path, handler)
+func (g *Group) TRACE(path string, handler HandlerFunc) {
+	g.Handle(http.MethodTrace, path, handler)
 }
 
 func joinPath(prefix, path string) string {

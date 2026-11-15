@@ -1,15 +1,20 @@
 package router
 
-import "net/http"
+import (
+	"log/slog"
+	"net/http"
+)
 
 type Router struct {
-	mux *http.ServeMux
+	mux    *http.ServeMux
+	logger *slog.Logger
 }
 
-func New() *Group {
+func New(logger *slog.Logger) *Group {
 	return &Group{
 		router: &Router{
-			mux: http.NewServeMux(),
+			mux:    http.NewServeMux(),
+			logger: logger,
 		},
 	}
 }
