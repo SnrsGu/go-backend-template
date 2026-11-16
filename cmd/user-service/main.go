@@ -4,7 +4,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"go-backend-template/internal/service/user"
+	userservice "go-backend-template/internal/service/user"
+	usermodule "go-backend-template/internal/service/user/user"
 	"log"
 	"os"
 	"os/signal"
@@ -62,12 +63,12 @@ func run() error {
 		return fmt.Errorf("获取 user-service 数据库失败: %w", err)
 	}
 
-	userRepository := user.NewRepository(userDB)
-	userService := user.NewService(userRepository)
-	userHandler := user.NewHandler(userService)
+	userRepository := usermodule.NewRepository(userDB)
+	userService := usermodule.NewService(userRepository)
+	userHandler := usermodule.NewHandler(userService)
 
 	appRouter := router.New(appLogger)
-	user.RegisterRoutes(appRouter, userHandler)
+	userservice.RegisterRoutes(appRouter, userHandler)
 
 	httpHandler := middleware.Chain(
 		appRouter,
