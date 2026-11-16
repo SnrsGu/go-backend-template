@@ -8,34 +8,32 @@ log:
   level: "info"
   format: "text"
 
-
-
 database:
-  connections:
-    user:
-      driver: mysql
-      primary:
-        dsn_env: GBT_DB_USER_PRIMARY_DSN
-      replicas:
-        - dsn_env: GBT_DB_USER_REPLICA_1_DSN
-        - dsn_env: GBT_DB_USER_REPLICA_2_DSN
-      pool:
-        max_open_conns: 20
-        max_idle_conns: 10
-        conn_max_lifetime: 1800
-        conn_max_idle_time: 600
-      connect_timeout: 5
-      slow_threshold: 200
-
-    analytics:
-      driver: postgres
-      primary:
-        dsn_env: GBT_DB_ANALYTICS_PRIMARY_DSN
-      replicas: []
-      pool:
-        max_open_conns: 10
-        max_idle_conns: 5
-        conn_max_lifetime: 1800
-        conn_max_idle_time: 600
-      connect_timeout: 5
-      slow_threshold: 500
+  connections: {}
+#    user:
+#      driver: mysql
+#      primary:
+#        dsn_env: GBT_DB_USER_PRIMARY_DSN
+#      replicas:
+#        - dsn_env: GBT_DB_USER_REPLICA_1_DSN
+#        - dsn_env: GBT_DB_USER_REPLICA_2_DSN
+#      pool:
+#        max_open_conns: 20
+#        max_idle_conns: 10
+#        conn_max_lifetime: 1800
+#        conn_max_idle_time: 600
+#      connect_timeout: 5
+#      slow_threshold: 200
+#
+#    analytics:
+#      driver: postgres
+#      primary:
+#        dsn_env: GBT_DB_ANALYTICS_PRIMARY_DSN
+#      replicas: [ ]
+#      pool:
+#        max_open_conns: 10
+#        max_idle_conns: 5
+#        conn_max_lifetime: 1800
+#        conn_max_idle_time: 600
+#      connect_timeout: 5
+#      slow_threshold: 500
