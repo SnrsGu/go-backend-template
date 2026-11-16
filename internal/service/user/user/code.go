@@ -6,5 +6,6 @@ import (
 )
 
 var (
-	CodeUserNotFound = response.NewCode(20001, "用户不存在", http.StatusNotFound)
+	CodeUserNotFound   = response.NewCode(20001, "用户不存在", http.StatusNotFound)
+	CodeUsernameExists = response.NewCode(20002, "用户名已存在", http.StatusNotFound)
 )
